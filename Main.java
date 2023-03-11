@@ -212,6 +212,37 @@ class HRRN extends Scheduler {
     }
 }
 
+class SRT extends Scheduler {
+    SRT(String name) {
+        super(name);
+    }
+
+    @Override
+    public void schedule() {
+        super.schedule();
+
+        if (readyQueue.isEmpty()) {
+            currentProcess = readyQueue.peek();
+        } else {
+            int min = readyQueue.peek().getRemainingTime();
+            int index = 0;
+            for (int i = 0; i < super.numOfProcess; i++) {
+                if (min > readyQueue.get(i).getRemainingTime()) {
+                    min = readyQueue.get(i).getRemainingTime();
+                    index = i;
+                }
+            }
+            currentProcess = readyQueue.get(index);
+        }
+    }
+
+    @Override
+    public boolean isSchedulable() {
+        return isNewProcessArrived;
+    }
+
+}
+
 class Jobs {
     // 도착할 각 프로세스의 이름, 도착시간, 서비스시간 등을 배열로 관리함
     private String processNames[] = { "A", "B", "C", "D", "E", "A", "B", "C", "D", "E" };
@@ -411,6 +442,9 @@ public class Main {
                     break;
                 case 5:
                     cs.run(new HRRN("HRRN"));
+                    break;
+                case 6:
+                    cs.run(new SRT("SRT"));
                     break;
                 default:
                     System.out.println("WRONG menu item\n");
