@@ -161,6 +161,31 @@ class FCFS extends Scheduler {
     }
 }
 
+class SPN extends Scheduler {
+    SPN(String name) {
+        super(name);
+    }
+
+    @Override
+    public void schedule() {
+        super.schedule();
+
+        if (readyQueue.isEmpty()) {
+            currentProcess = readyQueue.peek();
+        } else {
+            int index = 0;
+            int min = readyQueue.peek().getServiceTime();
+            for (int i = 0; i < super.numOfProcess; i++) {
+                if (min > readyQueue.get(i).getServiceTime()) {
+                    min = readyQueue.get(i).getServiceTime();
+                    index = i;
+                }
+            }
+            currentProcess = readyQueue.get(index);
+        }
+    }
+}
+
 class Jobs {
     // 도착할 각 프로세스의 이름, 도착시간, 서비스시간 등을 배열로 관리함
     private String processNames[] = { "A", "B", "C", "D", "E", "A", "B", "C", "D", "E" };
@@ -354,6 +379,9 @@ public class Main {
                 // cs.run()에서 FCFS 스케줄러를 작동시킴; "FCFS"는 스케줄러 이름이다.
                 case 3:
                     cs.run(new FCFS("FCFS"));
+                    break;
+                case 4:
+                    cs.run(new SPN("SPN"));
                     break;
                 default:
                     System.out.println("WRONG menu item\n");
