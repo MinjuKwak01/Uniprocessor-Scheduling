@@ -186,6 +186,32 @@ class SPN extends Scheduler {
     }
 }
 
+class HRRN extends Scheduler {
+    HRRN(String name) {
+        super(name);
+    }
+
+    @Override
+    public void schedule() {
+        super.schedule();
+
+        if (readyQueue.isEmpty()) {
+            currentProcess = readyQueue.peek();
+        } else {
+            double max = 0.0;
+            int index = 0;
+            for (int i = 0; i < super.numOfProcess; i++) {
+                if (max < readyQueue.get(i).getResponeRatioTime(currentTime)) {
+                    max = readyQueue.get(i).getResponeRatioTime(currentTime);
+                    index = i;
+                }
+            }
+            currentProcess = readyQueue.get(index);
+        }
+
+    }
+}
+
 class Jobs {
     // 도착할 각 프로세스의 이름, 도착시간, 서비스시간 등을 배열로 관리함
     private String processNames[] = { "A", "B", "C", "D", "E", "A", "B", "C", "D", "E" };
@@ -382,6 +408,9 @@ public class Main {
                     break;
                 case 4:
                     cs.run(new SPN("SPN"));
+                    break;
+                case 5:
+                    cs.run(new HRRN("HRRN"));
                     break;
                 default:
                     System.out.println("WRONG menu item\n");
