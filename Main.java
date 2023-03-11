@@ -59,12 +59,67 @@ class Process {
     }
 }
 
+abstract class Scheduler {
+    private String name; // 스케줄러 이름
+    protected Process currentProcess; // 현재 실행되고 있는 프로세스의 레퍼런스 변수
+    protected LinkedList<Process> readyQueue; // ready 상태의 모든 프로세스들을 모아 놓은 ready queue
+
+    protected Scheduler(String name) {
+        this.name = name;
+    }
+
+    public void setJobs(Jobs jobs) {
+    }
+
+    public boolean isSchedulable() {
+        return false;
+    }
+
+    public void schedule() {
+    }
+
+    public boolean hasMoreProcessesToExecute() {
+        return false;
+    }
+
+    public String getName() {
+        return name;
+    } // 스케줄러 이름 반환
+
+    public int getCurrentTime() {
+        return 0;
+    }
+
+    public void clockInterrupt() {
+    }
+}
+
+class FCFS extends Scheduler {
+    FCFS(String name) {
+        super(name);
+    } // 스케줄러 이름
+
+    @Override
+    public void schedule() {
+        super.schedule();
+        // 다음에 실행할 프로세스 선택
+        // 큐의 헤드에 있는 원소를 반환 (삭제하지는 않음) , or 없으면 null 리턴
+        currentProcess = readyQueue.peek();
+        // 실제 시스템에서는 여기서 currentProcess에게 CPU를 넘김.
+    }
+}
+
 class Jobs {
     // 도착할 각 프로세스의 이름, 도착시간, 서비스시간 등을 배열로 관리함
-    private String processNames[];
-    private int arrivalTimes[];
-    private int serviceTimes[];
+    private String processNames[] = { "A", "B", "C", "D", "E", "A", "B", "C", "D", "E" };
+    private int arrivalTimes[] = { 0, 2, 4, 6, 8, 30, 32, 34, 36, 38 };
+    private int serviceTimes[] = { 3, 6, 4, 5, 2, 6, 3, 4, 5, 2 };
+
     private int index; // 다음 번에 도착할 프로세스의 위 배열 인덱스
+
+    public Jobs() {
+        printJobs();
+    }
 
     public void printJobs() {
         for (String n : processNames)
@@ -154,10 +209,65 @@ class Jobs {
 
 }
 
+class ComputerSystem {
+    public Jobs jobs;
+
+    public void setJobs(Jobs jobs) {
+        this.jobs = jobs;
+    }
+
+    public ComputerSystem(Jobs jobs) {
+        setJobs(jobs);
+    }
+
+    // 문제 3:
+    public void printEpilog(Scheduler scheduler) {
+        /*
+         * 화면에 다음과 같이 시간 테이블을 출력함
+         * Scheduling Algorithm: 알고리즘이름
+         * 0 1 2 3 4 5 // 시간 십단위
+         * 0123456789012345678901234567890123456789012345678901234 // 시간 일단위
+         */
+        System.out.println("Scheduling Algorithm: " + scheduler.getName());
+        System.out.println("0         1         2         3         4         5");
+        System.out.println("0123456789012345678901234567890123456789012345678901234");
+
+        System.out.println();
+    }
+
+    public void run(Scheduler scheduler) { // 스케줄링 알고리즘을 테스트 함
+
+        printEpilog(scheduler); // 화면에 단위시간 눈금자를 출력함
+        scheduler.setJobs(jobs);
+
+        while (scheduler.hasMoreProcessesToExecute()) { // 아직 더 실행해야 할 프로세스가 있는지 체크
+
+            scheduler.clockInterrupt(); // 매 시간단위마다 스케줄러의 clock interrupt handler를 호출함
+
+            if (scheduler.isSchedulable()) // 새로 스케줄링 해야하는 시점인지 체크
+                scheduler.schedule(); // 새로 스케줄링 함
+
+            try { // 우리 스케줄러에서 사용할 시간단위는 100ms: 빠르게 실행하려면 이 값을 10 또는 1로 줄여도 됨
+                  // 100ms마다 한번씩 위 scheduler.clockInterrupt()와 schedule()가 한번씩 호출됨
+                Thread.sleep(100); // 100 millisecond 동안 정지했다가 리턴함
+            }
+            // sleep()하는 동안 다른 스레드에 의해 인터럽이 들어 온 경우, 여기서는 전혀 발생하지 않음
+            catch (InterruptedException e) {
+                // InterruptedException이 발생했을 경우 지금껏 호출된 함수 리스트를 출력해 볼 수 있음
+                e.printStackTrace();
+                return;
+            }
+        }
+        System.out.println("\n");
+    }
+}
+
 public class Main {
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
-        Jobs jobs = null;
+        Jobs jobs = new Jobs();
+        System.out.println();
+        ComputerSystem cs = new ComputerSystem(jobs);
 
         while (true) {
             System.out.println("************************ Main Menu *******************");
@@ -165,23 +275,22 @@ public class Main {
             System.out.println("* 3.FCFS  4.SPN  5.HRRN  6.SRT  7.RR(q=1)  8.RR(q=4) *");
             System.out.println("******************************************************");
             System.out.print("Menu item number? ");
-
             int idx = scan.nextInt();
             if (idx == 0)
                 break;
-
             switch (idx) {
                 case 1:
                     jobs = new Jobs(scan);
+                    cs.setJobs(jobs);
                     break;
                 case 2:
-                    if (jobs == null)
-                        System.out.println("Jobs is not initalized. " +
-                                "Run menu item [1.Jobs] in advance.");
-                    else
-                        jobs.processTest();
+                    jobs.processTest();
                     break;
-
+                // FCFS 객체를 생성한 후 이를 인자로 사용하여 cs.run()를 호출한다.
+                // cs.run()에서 FCFS 스케줄러를 작동시킴; "FCFS"는 스케줄러 이름이다.
+                case 3:
+                    cs.run(new FCFS("FCFS"));
+                    break;
                 default:
                     System.out.println("WRONG menu item\n");
                     break;
